@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>B&W Spin Multiplayer Game</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        body { background: #121212; color: #fff; padding: 10px; }
+        h2 { text-align: center; margin-bottom: 10px; color: #ffd700; font-size: 20px; }
+        h3 { text-align: center; margin-bottom: 10px; color: #ffd700; font-size: 16px; }
+        .tabs-container { display: flex; gap: 5px; margin-bottom: 10px; }
+        .view-btn { flex: 1; padding: 12px 5px; background: #333; color: #fff; border: 1px solid #555; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 13px; text-align: center; }
+        .view-btn.active { background: #00bcd4 !important; color: #000 !important; border-color: #fff; }
+        .panel { display: none; background: #1e1e1e; border: 2px solid #333; border-radius: 10px; padding: 15px; margin-top: 10px; }
+        .panel.active { display: block !important; }
+        #wheel-container { position: relative; width: 200px; height: 200px; margin: 20px auto; border-radius: 50%; border: 8px solid #ffd700; overflow: hidden; transition: transform 5s cubic-bezier(0.1, 0.8, 0.1, 1); }
+        .half { position: absolute; width: 100%; height: 100%; }
+        .black-half { background: #000; clip-path: polygon(50% 50%, 50% 0%, 100% 0%, 100% 100%, 50% 100%); }
+        .white-half { background: #fff; clip-path: polygon(50% 50%, 50% 0%, 0% 0%, 0% 100%, 50% 100%); }
+        #pointer { text-align: center; font-size: 24px; color: #ffd700; margin-bottom: -10px; position: relative; z-index: 10; }
+        #timer { text-align: center; font-size: 36px; font-weight: bold; color: #ff3333; text-shadow: 0 0 10px rgba(255,51,51,0.5); margin: 10px 0; }
+        .chips-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; margin: 15px 0; }
+        .chip { background: radial-gradient(circle, #ffd700 40%, #b8860b 100%); color: #000; font-weight: bold; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border: 2px dashed #000; font-size: 11px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .chip.selected { outline: 3px solid #00bcd4; }
+        .bet-zones { display: flex; gap: 10px; margin: 15px 0; }
+        .zone { flex: 1; height: 90px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; cursor: pointer; }
+        .zone.black { background: #000; color: #fff; border: 2px solid #333; }
+        .zone.white { background: #fff; color: #000; border: 2px solid #ccc; }
+        .zone span { font-size: 14px; margin-top: 5px; opacity: 0.8; }
+        .magic-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
+        .magic-btn { padding: 12px 5px; font-size: 12px; font-weight: bold; border: none; border-radius: 5px; color: #fff; cursor: pointer; text-align: center; background: #444; }
+        .magic-btn.active { outline: 3px solid #fff; box-shadow: 0 0 10px #fff; background: #00bcd4 !important; color: #000 !important; }
+        .table-wrapper { overflow-x: auto; margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
+        th, td { padding: 8px; border-bottom: 1px solid #333; }
+        th { background: #222; color: #ffd700; }
+        input[type="text"], input[type="number"] { width: 65px; padding: 4px; border: 1px solid #444; background: #2a2a2a; color: #fff; border-radius: 3px; font-size: 11px; }
+        .action-btn { padding: 4px 6px; font-size: 10px; border: none; border-radius: 3px; cursor: pointer; font-weight: bold; color: #fff; }
+        #win-popup { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 999; align-items: center; justify-content: center; flex-direction: column; text-align: center; }
+        #win-box { background: linear-gradient(135deg, #000 0%, #1a1a1a 100%); border: 4px solid #ffd700; padding: 30px; border-radius: 20px; box-shadow: 0 0 30px #ffd700; }
+        #win-text { font-size: 40px; color: #ffd700; font-weight: bold; margin-bottom: 10px; text-shadow: 0 0 20px #ff0000; }
+    </style>
+</head>
+<body>
+
+    <h2>🎡 MULTIPLAYER PLATFORM</h2>
+    <div class="tabs-container">
+        <button id="tab-player" class="view-btn active" onclick="switchView('player')">Khiladi App</button>
+        <button id="tab-admin" class="view-btn" onclick="switchView('admin')">Master Admin</button>
+        <button id="tab-dealer" class="view-btn" onclick="switchView('dealer')">Dealer Panel</button>
+    </div>
+
+    <!-- PLAYER PANEL -->
+    <div id="player-panel" class="panel active">
+        <h3>PLAYER DASHBOARD</h3>
+        <p style="text-align: center; font-size: 14px; margin-bottom:10px;">Wallet Balance: <strong id="player-balance" style="color:#00ff00;">2500</strong> Pts</p>
+        
+        <div id="pointer">▼</div>
+        <div id="wheel-container">
+            <div class="half white-half"></div>
+            <div class="half black-half"></div>
+        </div>
+        <div id="timer">00:60</div>
+
+        <div class="chips-grid">
+            <div class="chip" id="c10" onclick="selectChip(10)">10</div>
+            <div class="chip" id="c20" onclick="selectChip(20)">20</div>
+            <div class="chip" id="c50" onclick="selectChip(50)">50</div>
+            <div class="chip" id="c100" onclick="selectChip(100)">100</div>
+            <div class="chip" id="c200" onclick="selectChip(200)">200</div>
+            <div class="chip" id="c500" onclick="selectChip(500)">500</div>
+            <div class="chip" id="c1000" onclick="selectChip(1000)">1000</div>
+        </div>
+
+        <div class="bet-zones">
+            <div class="zone black" onclick="placeBet('black')">BLACK<span id="player-black-bet">0 Pts</span></div>
+            <div class="zone white" onclick="placeBet('white')">WHITE<span id="player-white-bet">0 Pts</span></div>
+        </div>
+    </div>
+
+    <!-- MASTER ADMIN PANEL -->
+    <div id="admin-panel" class="panel">
+        <h3>👑 MASTER ADMIN VIEW</h3>
+        <div class="magic-grid">
+            <button id="mode-max" class="magic-btn" style="background:#d32f2f;" onclick="setOverride('max_bet')">MAX BET WIN</button>
+            <button id="mode-min" class="magic-btn" style="background:#388e3c;" onclick="setOverride('min_bet')">MIN BET WIN</button>
+            <button id="mode-fb" class="magic-btn" style="background:#000; border:1px solid #444;" onclick="setOverride('force_black')">FIX BLACK</button>
+            <button id="mode-fw" class="magic-btn" style="background:#fff; color:#000;" onclick="setOverride('force_white')">FIX WHITE</button>
+        </div>
+        <button id="mode-rand" class="magic-btn active" style="background:#f57c00; width:100%; margin-bottom:15px;" onclick="setOverride('random')">CONTINUOUS RANDOM</button>
+
+        <h4 style="color:#ffd700; font-size:13px; margin-bottom:5px;">📋 Live Dealer Accounts (Total: 10)</h4>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Dealer ID</th>
+                        <th>Points</th>
+                        <th>Set Password</th>
+                        <th>Control</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-dealer-rows"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- DEALER PANEL -->
+    <div id="dealer-panel" class="panel">
+        <h3>💼 DEALER PORTAL</h3>
+        <p style="text-align: center; margin-bottom: 10px; font-size:12px;">Active ID Session:</p>
+        <select id="dealer-session-select" onchange="loadDealerSession()" style="width:100%; padding:8px; background:#222; color:#fff; border:1px solid #444; border-radius:5px; margin-bottom:15px; font-weight:bold;"></select>
+        <div style="background:#151515; padding:15px; border-radius:5px; border:1px dashed #333; font-size:14px;">
+            <p style="margin-bottom:5px;">Wallet Stock: <strong id="dealer-points-display" style="color:#00ff00;">50000</strong> Pts</p>
+            <p>Weekly Earning Commission (5%): <strong id="dealer-comm-display" style="color:#ffd700;">₹0</strong></p>
+        </div>
+    </div>
+
+    <!-- WIN POPUP -->
+    <div id="win-popup">
+        <div id="win-box">
+            <div id="win-text">🎉 WIN! 🎉</div>
+            <p style="color:#fff; font-size:16px; font-weight:bold; margin-bottom:15px;">POINTS UPDATED IN YOUR WALLET!</p>
+            <button class="view-btn" style="background:#ffd700; color:#000;" onclick="closePopup()">CONTINUE</button>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        let selectedChipAmount = 10;
+        let currentBets = { black: 0, white: 0 };
+        let activeDealer = "Dealer_01";
+        let localBalance = 2500;
+
+        function switchView(view) {
+            document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.getElementById(`tab-${view}`).classList.add('active');
+            document.getElementById(`${view}-panel`).classList.add('active');
+        }
+
+        function selectChip(amt) {
+            selectedChipAmount = amt;
+            document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+            document.getElementById(`c${amt}`).classList.add('selected');
+        }
+        selectChip(10);
+
+        function placeBet(color) {
+            if (currentBets[color] + selectedChipAmount > 1000) { alert("Max Limit 1000 points!"); return; }
+            if (localBalance < selectedChipAmount) { alert("Insufficient points!"); return; }
