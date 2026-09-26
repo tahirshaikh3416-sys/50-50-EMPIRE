@@ -3,151 +3,180 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>B&W Spin Multiplayer Game</title>
-    <script src="/socket.io/socket.io.js"></script>
+    <title>50-50 EMPIRE - Secure Arcade Network</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
-        body { background: #121212; color: #fff; padding: 10px; }
-        h2 { text-align: center; margin-bottom: 10px; color: #ffd700; font-size: 20px; }
-        h3 { text-align: center; margin-bottom: 10px; color: #ffd700; font-size: 16px; }
-        .tabs-container { display: flex; gap: 5px; margin-bottom: 10px; }
-        .view-btn { flex: 1; padding: 12px 5px; background: #333; color: #fff; border: 1px solid #555; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 13px; text-align: center; }
-        .view-btn.active { background: #00bcd4 !important; color: #000 !important; border-color: #fff; }
-        .panel { display: none; background: #1e1e1e; border: 2px solid #333; border-radius: 10px; padding: 15px; margin-top: 10px; }
-        .panel.active { display: block !important; }
-        #wheel-container { position: relative; width: 200px; height: 200px; margin: 20px auto; border-radius: 50%; border: 8px solid #ffd700; overflow: hidden; transition: transform 5s cubic-bezier(0.1, 0.8, 0.1, 1); }
-        .half { position: absolute; width: 100%; height: 100%; }
-        .black-half { background: #000; clip-path: polygon(50% 50%, 50% 0%, 100% 0%, 100% 100%, 50% 100%); }
-        .white-half { background: #fff; clip-path: polygon(50% 50%, 50% 0%, 0% 0%, 0% 100%, 50% 100%); }
-        #pointer { text-align: center; font-size: 24px; color: #ffd700; margin-bottom: -10px; position: relative; z-index: 10; }
-        #timer { text-align: center; font-size: 36px; font-weight: bold; color: #ff3333; text-shadow: 0 0 10px rgba(255,51,51,0.5); margin: 10px 0; }
-        .chips-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; margin: 15px 0; }
-        .chip { background: radial-gradient(circle, #ffd700 40%, #b8860b 100%); color: #000; font-weight: bold; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border: 2px dashed #000; font-size: 11px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        .chip.selected { outline: 3px solid #00bcd4; }
-        .bet-zones { display: flex; gap: 10px; margin: 15px 0; }
-        .zone { flex: 1; height: 90px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; cursor: pointer; }
-        .zone.black { background: #000; color: #fff; border: 2px solid #333; }
-        .zone.white { background: #fff; color: #000; border: 2px solid #ccc; }
-        .zone span { font-size: 14px; margin-top: 5px; opacity: 0.8; }
-        .magic-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
-        .magic-btn { padding: 12px 5px; font-size: 12px; font-weight: bold; border: none; border-radius: 5px; color: #fff; cursor: pointer; text-align: center; background: #444; }
-        .magic-btn.active { outline: 3px solid #fff; box-shadow: 0 0 10px #fff; background: #00bcd4 !important; color: #000 !important; }
-        .table-wrapper { overflow-x: auto; margin-top: 15px; }
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
-        th, td { padding: 8px; border-bottom: 1px solid #333; }
-        th { background: #222; color: #ffd700; }
-        input[type="text"], input[type="number"] { width: 65px; padding: 4px; border: 1px solid #444; background: #2a2a2a; color: #fff; border-radius: 3px; font-size: 11px; }
-        .action-btn { padding: 4px 6px; font-size: 10px; border: none; border-radius: 3px; cursor: pointer; font-weight: bold; color: #fff; }
-        #win-popup { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 999; align-items: center; justify-content: center; flex-direction: column; text-align: center; }
-        #win-box { background: linear-gradient(135deg, #000 0%, #1a1a1a 100%); border: 4px solid #ffd700; padding: 30px; border-radius: 20px; box-shadow: 0 0 30px #ffd700; }
-        #win-text { font-size: 40px; color: #ffd700; font-weight: bold; margin-bottom: 10px; text-shadow: 0 0 20px #ff0000; }
+        /* CSS थीम और कलर्स - 100% लॉक्ड */
+        :root {
+            --bg-main: #0d1117;
+            --bg-card: #090d14;
+            --bg-dark: #000000;
+            --neon-cyan: #00d2ff;
+            --neon-magenta: #ff0055;
+            --neon-green: #56ff94;
+            --neon-orange: #ff9100;
+            --text-gray: #8b949e;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* सिस्टम नेविगेशन टैब्स */
+        .system-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: var(--bg-card);
+            padding: 8px;
+            border-radius: 12px;
+            border: 1px solid #30363d;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-gray);
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            text-transform: uppercase;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(90deg, var(--neon-magenta), #d9004c);
+            color: #fff;
+            box-shadow: 0 0 10px rgba(255, 0, 85, 0.4);
+        }
+
+        .view-panel {
+            display: none;
+            width: 100%;
+            max-width: 400px;
+            background: var(--bg-card);
+            border: 2px solid var(--neon-cyan);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: 0 0 25px rgba(0, 210, 255, 0.15);
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        .view-panel.active { display: block; }
+
+        /* हेडर लोगो स्टाइल */
+        .brand-logo {
+            width: 70px;
+            height: 70px;
+            margin: 0 auto 10px auto;
+            border-radius: 16px;
+            border: 2px solid var(--neon-orange);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(255, 145, 0, 0.2);
+        }
+
+        h2 { margin: 5px 0 20px 0; font-size: 22px; color: #fff; text-transform: uppercase; letter-spacing: 1px;}
+        .sub-tag { font-size: 11px; color: var(--neon-cyan); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px;}
+
+        /* इनपुट बॉक्स स्टाइल */
+        .input-group { text-align: left; margin-bottom: 16px; }
+        .input-group label { display: block; font-size: 11px; color: var(--text-gray); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 1px; }
+        .input-group input { width: 100%; background: var(--bg-dark); border: 1px solid #30363d; border-radius: 8px; padding: 12px; color: #fff; box-sizing: border-box; font-size: 14px; }
+        .input-group input:focus { border-color: var(--neon-magenta); outline: none; }
+
+        /* बटन स्टाइल */
+        .action-btn { background: linear-gradient(90deg, var(--neon-cyan), #0088cc); color: #000; border: none; width: 100%; padding: 14px; border-radius: 10px; font-size: 13px; font-weight: bold; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; margin-top: 10px; box-shadow: 0 4px 15px rgba(0, 210, 255, 0.3); }
+        .action-btn.magenta { background: linear-gradient(90deg, var(--neon-magenta), #d9004c); color: #fff; box-shadow: 0 4px 15px rgba(255, 0, 85, 0.3); }
+
+        /* स्पिनर व्हील लेआउट */
+        .wheel-container { position: relative; width: 240px; height: 240px; margin: 15px auto; border-radius: 50%; background: linear-gradient(180deg, #ffffff 50%, #1f2431 50%); border: 8px solid #282f42; box-shadow: 0 0 20px rgba(0,0,0,0.6); transition: transform 4s cubic-bezier(0.1, 0.8, 0.1, 1); }
+        .wheel-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; background: #800020; border: 4px solid #ffd700; border-radius: 50%; z-index: 10; }
+
+        /* इंफो ग्रिड और चिप्स */
+        .info-grid { display: flex; justify-content: space-between; margin: 20px 0; font-size: 12px; }
+        .balance-val { color: var(--neon-green); font-size: 18px; font-weight: bold; }
+        .timer-val { color: var(--neon-orange); font-size: 18px; font-weight: bold; }
+        
+        .bet-row { display: flex; gap: 10px; margin-bottom: 15px; }
+        .bet-choice { flex: 1; padding: 12px; border-radius: 10px; border: 1px solid #30363d; background: #1a2233; color: #fff; font-weight: bold; cursor: pointer; }
+        .bet-choice.white { background: #ffffff; color: #000; }
+        .bet-choice.black { background: #000000; color: #fff; border-color: #333; }
+
+        .chips-bar { display: flex; justify-content: space-between; margin-bottom: 15px; }
+        .chip-item { background: #161b22; border: 1px solid #30363d; padding: 8px; border-radius: 8px; font-size: 12px; cursor: pointer; width: 55px; box-sizing: border-box;}
+        .chip-item.active { background: var(--neon-orange); color: #000; font-weight: bold; border-color: var(--neon-orange); }
+
+        /* डीलर कार्ड रो */
+        .dealer-row { background: var(--bg-dark); border: 1px solid #30363d; border-radius: 10px; padding: 12px; margin-bottom: 12px; text-align: left; font-size: 13px; }
+        .dealer-meta { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .ctrl-group { display: flex; gap: 6px; flex-wrap: wrap; }
+        .sub-btn { background: #161b22; border: 1px solid #30363d; color: #fff; padding: 5px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; }
+        .sub-btn.danger { border-color: var(--neon-magenta); color: var(--neon-magenta); }
+
+        /* विनिंग पॉपअप विंडो */
+        .win-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; justify-content: center; align-items: center; flex-direction: column; }
+        .win-box { background: var(--bg-card); border: 3px solid var(--neon-green); border-radius: 20px; padding: 30px; text-align: center; box-shadow: 0 0 30px var(--neon-green); }
+        .win-title { font-size: 28px; color: var(--neon-green); font-weight: bold; margin-bottom: 10px; text-transform: uppercase; animation: blink 1s infinite; }
+        
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
     </style>
 </head>
 <body>
 
-    <h2>🎡 MULTIPLAYER PLATFORM</h2>
-    <div class="tabs-container">
-        <button id="tab-player" class="view-btn active" onclick="switchView('player')">Khiladi App</button>
-        <button id="tab-admin" class="view-btn" onclick="switchView('admin')">Master Admin</button>
-        <button id="tab-dealer" class="view-btn" onclick="switchView('dealer')">Dealer Panel</button>
+    <!-- सिस्टम नेविगेशन टैब्स -->
+    <div class="system-tabs">
+        <button class="tab-btn active" onclick="switchView('gateway')">Login Portal</button>
+        <button class="tab-btn" onclick="switchView('master')">Master Admin</button>
+        <button class="tab-btn" onclick="switchView('dealer')">Dealer Panel</button>
+        <button class="tab-btn" onclick="switchView('player')">Player Arena</button>
     </div>
 
-    <!-- PLAYER PANEL -->
-    <div id="player-panel" class="panel active">
-        <h3>PLAYER DASHBOARD</h3>
-        <p style="text-align: center; font-size: 14px; margin-bottom:10px;">Wallet Balance: <strong id="player-balance" style="color:#00ff00;">2500</strong> Pts</p>
+    <!-- 1. LOGIN GATEWAY VIEW -->
+    <div id="panel-gateway" class="view-panel active">
+        <div class="brand-logo"><span style="font-size:18px;color:var(--neon-magenta)">2X</span><span style="font-size:9px;color:var(--text-gray)">50-50</span></div>
+        <h2>50-50 Empire</h2>
+        <div class="sub-tag">Secure Entry Logic Gateway</div>
         
-        <div id="pointer">▼</div>
-        <div id="wheel-container">
-            <div class="half white-half"></div>
-            <div class="half black-half"></div>
-        </div>
-        <div id="timer">00:60</div>
-
-        <div class="chips-grid">
-            <div class="chip" id="c10" onclick="selectChip(10)">10</div>
-            <div class="chip" id="c20" onclick="selectChip(20)">20</div>
-            <div class="chip" id="c50" onclick="selectChip(50)">50</div>
-            <div class="chip" id="c100" onclick="selectChip(100)">100</div>
-            <div class="chip" id="c200" onclick="selectChip(200)">200</div>
-            <div class="chip" id="c500" onclick="selectChip(500)">500</div>
-            <div class="chip" id="c1000" onclick="selectChip(1000)">1000</div>
+        <div style="display:flex; gap:10px; margin-bottom:20px;">
+            <button class="bet-choice" style="font-size:12px;" onclick="setLoginRole('player')">👤 Player</button>
+            <button class="bet-choice" style="font-size:12px;" onclick="setLoginRole('dealer')">💼 Dealer</button>
+            <button class="bet-choice" style="font-size:12px;" onclick="setLoginRole('master')">👑 Master</button>
         </div>
 
-        <div class="bet-zones">
-            <div class="zone black" onclick="placeBet('black')">BLACK<span id="player-black-bet">0 Pts</span></div>
-            <div class="zone white" onclick="placeBet('white')">WHITE<span id="player-white-bet">0 Pts</span></div>
+        <div id="login-fields-standard">
+            <div class="input-group"><label id="login-id-label">Player Username / ID</label><input type="text" placeholder="Enter ID here..."></div>
+            <div class="input-group"><label>Enter Password Key</label><input type="password" placeholder="••••••••"></div>
+            <button class="action-btn magenta" onclick="alert('लॉगिन वेरिफिकेशन सफल!')">Initiate Entry</button>
         </div>
-    </div>
 
-    <!-- MASTER ADMIN PANEL -->
-    <div id="admin-panel" class="panel">
-        <h3>👑 MASTER ADMIN VIEW</h3>
-        <div class="magic-grid">
-            <button id="mode-max" class="magic-btn" style="background:#d32f2f;" onclick="setOverride('max_bet')">MAX BET WIN</button>
-            <button id="mode-min" class="magic-btn" style="background:#388e3c;" onclick="setOverride('min_bet')">MIN BET WIN</button>
-            <button id="mode-fb" class="magic-btn" style="background:#000; border:1px solid #444;" onclick="setOverride('force_black')">FIX BLACK</button>
-            <button id="mode-fw" class="magic-btn" style="background:#fff; color:#000;" onclick="setOverride('force_white')">FIX WHITE</button>
-        </div>
-        <button id="mode-rand" class="magic-btn active" style="background:#f57c00; width:100%; margin-bottom:15px;" onclick="setOverride('random')">CONTINUOUS RANDOM</button>
-
-        <h4 style="color:#ffd700; font-size:13px; margin-bottom:5px;">📋 Live Dealer Accounts (Total: 10)</h4>
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Dealer ID</th>
-                        <th>Points</th>
-                        <th>Set Password</th>
-                        <th>Control</th>
-                    </tr>
-                </thead>
-                <tbody id="admin-dealer-rows"></tbody>
-            </table>
+        <div id="login-fields-master" style="display:none;">
+            <div class="input-group"><label>Master Admin ID</label><input type="text" placeholder="MASTER_ROOT_ADMIN"></div>
+            <div class="input-group"><label>Password Key</label><input type="password" placeholder="••••••••"></div>
+            <button class="action-btn magenta" onclick="triggerMasterOTP()">Send OTP</button>
+            <div id="master-otp-box" style="display:none; margin-top:15px;">
+                <div class="input-group" style="border-top:1px dashed #333; padding-top:15px;"><label style="color:var(--neon-green)">➜ Enter Secure 6-Digit OTP</label><input type="text" placeholder="X X X X X X" style="text-align:center; letter-spacing:5px;"></div>
+                <button class="action-btn" style="background:var(--neon-green); color:#000;" onclick="switchView('master')">Verify & Enter Dashboard</button>
+            </div>
         </div>
     </div>
 
-    <!-- DEALER PANEL -->
-    <div id="dealer-panel" class="panel">
-        <h3>💼 DEALER PORTAL</h3>
-        <p style="text-align: center; margin-bottom: 10px; font-size:12px;">Active ID Session:</p>
-        <select id="dealer-session-select" onchange="loadDealerSession()" style="width:100%; padding:8px; background:#222; color:#fff; border:1px solid #444; border-radius:5px; margin-bottom:15px; font-weight:bold;"></select>
-        <div style="background:#151515; padding:15px; border-radius:5px; border:1px dashed #333; font-size:14px;">
-            <p style="margin-bottom:5px;">Wallet Stock: <strong id="dealer-points-display" style="color:#00ff00;">50000</strong> Pts</p>
-            <p>Weekly Earning Commission (5%): <strong id="dealer-comm-display" style="color:#ffd700;">₹0</strong></p>
-        </div>
-    </div>
-
-    <!-- WIN POPUP -->
-    <div id="win-popup">
-        <div id="win-box">
-            <div id="win-text">🎉 WIN! 🎉</div>
-            <p style="color:#fff; font-size:16px; font-weight:bold; margin-bottom:15px;">POINTS UPDATED IN YOUR WALLET!</p>
-            <button class="view-btn" style="background:#ffd700; color:#000;" onclick="closePopup()">CONTINUE</button>
-        </div>
-    </div>
-
-    <script>
-        const socket = io();
-        let selectedChipAmount = 10;
-        let currentBets = { black: 0, white: 0 };
-        let activeDealer = "Dealer_01";
-        let localBalance = 2500;
-
-        function switchView(view) {
-            document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-            document.getElementById(`tab-${view}`).classList.add('active');
-            document.getElementById(`${view}-panel`).classList.add('active');
-        }
-
-        function selectChip(amt) {
-            selectedChipAmount = amt;
-            document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
-            document.getElementById(`c${amt}`).classList.add('selected');
-        }
-        selectChip(10);
-
-        function placeBet(color) {
-            if (currentBets[color] + selectedChipAmount > 1000) { alert("Max Limit 1000 points!"); return; }
-            if (localBalance < selectedChipAmount) { alert("Insufficient points!"); return; }
+    <!-- 2. MASTER ADMIN VIEW -->
+    <div id="panel-master" class="view-panel">
+        <div class="sub-tag" style="color:var(--neon-magenta); border:1px solid var(--neon-magenta); display:inline-block; padding:3px 8px; border-radius:6px;">👑 Supreme Command Center</div>
+        <h2 style="margin-top:10px;">Engine Controller</h2>
+        
+        <!-- 4 जादुई बटन -->
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:20px;">
